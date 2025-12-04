@@ -1,0 +1,15 @@
+{
+    "tokens": [
+        "ETH",
+        "BTC",
+        "SOL"
+    ],
+    "currency": "USD",
+    "update_interval": 60,
+    "transparency": 0.95,
+    "always_on_top": false,
+    "font_size": 12,
+    "font_family": "Arial",
+    "bg_color": "#0f1729",
+    "text_color": "#ffffff"
+}
