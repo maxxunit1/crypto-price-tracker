@@ -55,19 +55,63 @@ class PriceFetcher:
             await self.session.close()
 
     async def update_exchange_rates(self) -> None:
-        """Update currency exchange rates via API"""
-        try:
-            url = 'https://api.exchangerate-api.com/v4/latest/USD'
-            async with self.session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    self.exchange_rates['EUR'] = data['rates'].get('EUR', 0.92)
-                    self.exchange_rates['RUB'] = data['rates'].get('RUB', 92.0)
-                    self.exchange_rates['UAH'] = data['rates'].get('UAH', 41.0)
-                    self.exchange_rates['KZT'] = data['rates'].get('KZT', 480.0)
-                    print(f"✅ Exchange rates updated: EUR={self.exchange_rates['EUR']:.4f}, RUB={self.exchange_rates['RUB']:.2f}, UAH={self.exchange_rates['UAH']:.2f}, KZT={self.exchange_rates['KZT']:.2f}")
-        except Exception as e:
-            print(f"⚠️ Failed to update exchange rates: {e}. Using cached values.")
+        """Обновление курсов валют через API с fallback на несколько источников"""
+
+        print("\n" + "=" * 50)
+        print("💱 ОБНОВЛЕНИЕ КУРСОВ ВАЛЮТ")
+        print("=" * 50)
+
+        # Список БЕСПЛАТНЫХ источников без регистрации (обновляются раз в сутки)
+        sources = [
+            ('ExchangeRate-API', 'https://api.exchangerate-api.com/v4/latest/USD', 'rates'),
+            ('Frankfurter', 'https://api.frankfurter.app/latest?from=USD', 'rates'),
+            ('ExchangeRate.host', 'https://api.exchangerate.host/latest?base=USD', 'rates'),
+            ('Open.er-api', 'https://open.er-api.com/v6/latest/USD', 'rates'),
+        ]
+
+        for source_name, url, rates_key in sources:
+            print(f"🔄 Пробуем {source_name}...")
+
+            try:
+                async with self.session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status == 200:
+                        data = await response.json()
+
+                        # Проверяем наличие ключа с курсами
+                        if rates_key in data:
+                            rates = data[rates_key]
+
+                            # Обновляем курсы
+                            self.exchange_rates['EUR'] = rates.get('EUR', self.exchange_rates['EUR'])
+                            self.exchange_rates['RUB'] = rates.get('RUB', self.exchange_rates['RUB'])
+                            self.exchange_rates['UAH'] = rates.get('UAH', self.exchange_rates['UAH'])
+                            self.exchange_rates['KZT'] = rates.get('KZT', self.exchange_rates['KZT'])
+
+                            print(f"✅ Курсы получены от {source_name}!")
+                            print(f"   EUR: {self.exchange_rates['EUR']:.4f}")
+                            print(f"   RUB: {self.exchange_rates['RUB']:.2f}")
+                            print(f"   UAH: {self.exchange_rates['UAH']:.2f}")
+                            print(f"   KZT: {self.exchange_rates['KZT']:.2f}")
+                            print("=" * 50)
+                            return  # Успешно получили - выходим
+                        else:
+                            print(f"⚠️ {source_name}: неверный формат ответа (нет ключа '{rates_key}')")
+                    else:
+                        print(f"⚠️ {source_name}: HTTP {response.status}")
+
+            except asyncio.TimeoutError:
+                print(f"⚠️ {source_name}: таймаут (>10 сек)")
+            except Exception as e:
+                print(f"⚠️ {source_name}: ошибка - {e}")
+
+        # Если ВСЕ источники упали
+        print(f"\n❌ ВСЕ ИСТОЧНИКИ НЕДОСТУПНЫ!")
+        print(f"📦 Используются кэшированные значения:")
+        print(f"   EUR: {self.exchange_rates['EUR']:.4f}")
+        print(f"   RUB: {self.exchange_rates['RUB']:.2f}")
+        print(f"   UAH: {self.exchange_rates['UAH']:.2f}")
+        print(f"   KZT: {self.exchange_rates['KZT']:.2f}")
+        print("=" * 50)
 
     async def get_token_price(self, token_symbol: str) -> Optional[float]:
         """
