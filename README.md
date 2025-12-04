@@ -48,11 +48,12 @@ Track cryptocurrency prices in real-time with a sleek, customizable desktop widg
 3. **Done!** ✅
 
 ### Mac/Linux Users
-1. **Download the project**
-2. **Navigate to project folder**: `cd /path/to/crypto-price-tracker`
-3. **Make executable**: `chmod +x start_mac_linux.sh`
-4. **Run**: `./start_mac_linux.sh`
-5. **Done!** ✅
+1. **Open Terminal**
+2. **Download the project**
+3. **Navigate to project folder**: `cd /path/to/crypto-price-tracker`
+4. **Make executable**: `chmod +x start_mac_linux.sh`
+5. **Run**: `./start_mac_linux.sh`
+6. **Done!** ✅
 
 The launcher will automatically:
 - ✅ Check Python (show download link if missing)
